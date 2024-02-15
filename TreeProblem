@@ -1,0 +1,137 @@
+import java.io.*;
+import java.util.*;
+
+public class Main {
+    public static void main(String[] args) throws Exception {
+        PrintWriter outpt = new PrintWriter(new File("TreeOut.txt"));
+
+        // Define growth percentages for different conditions
+        double[][][] growRain = {
+                {{0.1, 0.7, 0.05}, {0.05, 0.01, 0.02}, {0.02, 0.03, 0.03}, {0.0, 0.0, 0.0}},
+                {{0.1, 0.75, 0.05}, {0.1, 0.02, 0.03}, {0.02, 0.03, 0.03}, {0.0, 0.0, 0.0}},
+                {{0.3, 0.6, 0.05}, {0.1, 0.02, 0.03}, {0.02, 0.03, 0.03}, {0.0, 0.0, 0.0}},
+                {{0.35, 0.65, 0.05}, {0.01, 0.04, 0.04}, {0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}}
+        };
+
+        double[][] growBeetles = {
+                {0.1, 0.05, 0.0},
+                {0.15, 0.05, 0.0},
+                {0.3, 0.1, 0.02},
+                {0.3, 0.1, 0.02}
+        };
+
+        double[][] growFire = {
+                {0.15, 0.1, 0.05},
+                {0.18, 0.12, 0.07},
+                {0.22, 0.15, 0.1},
+                {0.3, 0.2, 0.15}
+        };
+
+        // Define initial distribution of trees
+        double[] initialDistribution = { 400000.0, 300000.0, 200000.0, 100000.0 };
+
+        // Define constants
+        int limit = 5;
+        int days = 3652; //100 years
+        double pcatch = 0.5;
+
+        Random rand = new Random();
+
+        // Initialize trees
+        Tree[] acres = new Tree[4];
+        for (int i = 0; i < 4; i++) {
+            acres[i] = new Tree(initialDistribution[i], growBeetles[i], growRain, growFire);
+        }
+
+        // Simulation loop for 100 years
+        for (int year = 1; year <= 100; year++) {
+            int rainfall = weather(rand); // Randomly determine weather type
+
+            // Output year and rainfall
+            outpt.println("Year: " + year);
+            outpt.println("Rainfall for year: " + rainfall);
+
+            // Perform simulations for each acre
+            for (int acre = 0; acre < 4; acre++) {
+                acres[acre].simulateYear(rainfall, limit, days, pcatch);
+            }
+
+            // Calculate total acreage after calculations
+            double totalAcreage = 0;
+            for (Tree acre : acres) {
+                totalAcreage += acre.getTotalTreeCount();
+            }
+
+            // Output year tree acreage for each acre
+            for (int acre = 0; acre < 4; acre++) {
+                double[] treeCount = acres[acre].getTreeCount();
+                for (int i = 0; i < treeCount.length; i++) {
+                    outpt.println("Year " + (i + 1) + " tree acreage: " + treeCount[i]);
+                }
+            }
+
+            // Output total acreage after calculations
+            outpt.println("Total acreage after calculations: " + totalAcreage);
+            outpt.println();
+        }
+
+        outpt.close();
+    }
+
+    // Random process for determining rainfall type
+    public static int weather(Random rand) {
+        int x = rand.nextInt(100);
+        if (x < 30)
+            return 7; // Drought year
+        else if (x < 90)
+            return 5; // Moderate year
+        else
+            return 10; // Heavy year
+    }
+
+    static class Tree {
+        private double[] treeCount;
+        private double[] growBeetles;
+        private double[][][] growRain;
+        private double[][] growFire;
+
+        public Tree(double initialCount, double[] growBeetles, double[][][] growRain, double[][] growFire) {
+            treeCount = new double[4];
+            treeCount[0] = initialCount;
+            this.growBeetles = growBeetles;
+            this.growRain = growRain;
+            this.growFire = growFire;
+        }
+
+        public void simulateYear(int rainfall, int limit, int days, double pcatch) {
+            double currentCount = treeCount[0];
+            for (int i = 0; i < days; i++) {
+                double pbeetle = pcatch * growBeetles[rainfall / 5 - 1];
+                double prain = pcatch * growRain[rainfall / 5 - 1][i % 4][2];
+                double pfire = pcatch * growFire[rainfall / 5 - 1][2];
+
+                // Compute new tree count
+                currentCount *= (1 + pbeetle + prain - pfire);
+                if (currentCount > limit * treeCount[0]) {
+                    currentCount = limit * treeCount[0];
+                }
+            }
+            treeCount[3] = treeCount[2];
+            treeCount[2] = treeCount[1];
+            treeCount[1] = treeCount[0];
+            treeCount[0] = currentCount;
+        }
+
+        public double getTotalTreeCount() {
+            double total = 0;
+            for (double count : treeCount) {
+                total += count*100;
+            }
+            return total;
+        }
+
+        public double[] getTreeCount() {
+            return treeCount;
+        }
+    }
+}
