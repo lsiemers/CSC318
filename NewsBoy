@@ -1,0 +1,186 @@
+import java.io.*;
+import java.io.IOException;
+import javax.swing.*;
+import java.util.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.lang.*;
+import java.util.NoSuchElementException;
+import java.math.*;
+import java.io.PrintWriter;
+
+//Assignment: CSC 318 - newsBoys
+//Name: Lukas Siemers
+/*
+This Program allows us to simulate a Time Step Simulation with random Demand every day, The program runs for 1000 Days and after that we collect the Statistics from it such as:
+- Average Demand
+- Average Papers Sold
+- The Variance Demand
+- The Variance Sold
+- The Average Profit
+- Variance Profit
+
+Inside the main Statement we have the different classes that we call and the loop for 1000 days.
+While executing the loop we are setting the order policy for each day such as a) = 16, b) = demand and c) demand - 1
+to determine the best strategy for maximizing profits.
+ */
+
+
+public class NewsBoySim {
+    public static void main(String[] args) throws Exception {
+
+        PrintWriter outPut;     //Defining PrinterWriter Variable
+
+        outPut = new PrintWriter(new File("NewsBoy.txt"));  //Defining Textfile for outPut
+
+        NewsBoy joe = new NewsBoy();                        //Creating a new object NewsBoy
+        NewsBoy.Stats stats = joe.new Stats();              //Creating a new object Stats withing the newsboy class
+        NewsBoy.demandProcess wantPaper = joe.new demandProcess(); //Creating a new object demandProcess withing the newsboy class
+
+        int dmd;                //Creating varialbe for demand
+        double sales,money;     //Creating varialbe for sales and money
+
+        int day;                //Creating variable for day
+        for (day=1;day<=1000;day++){            //Looping for 1000 Days
+            dmd = wantPaper.demandToday();      //Initializing dmd with today's Demand
+            joe.setDemand(dmd);                 //Setting the demand in the class
+            stats.updateStats(dmd,joe.getSold(),joe.getProfit());   //Updating the profit Statistics in the Stats Class
+            joe.order();       //Order newspaper for the current day unsing the order function
+            if (day>=500&&day<=510) {   //for output purposes
+                System.out.println("for day "+day+" demand: "+dmd+" sold: "+joe.getSold());
+                System.out.println(" profit: "+joe.getProfit()+" ordered: "+joe.getOrdered());
+                System.out.println("");
+                outPut.println("for day "+ day +" demand "+dmd+" sold "+joe.getSold());
+                outPut.println(" profit "+joe.getProfit()+" ordered "+joe.getOrdered());
+            }
+        }
+        outPut.close();
+
+        System.out.println("__________ Statistics for 1000 Days __________" );
+        System.out.println("Average demanded: " + stats.getAverageDemand() + "  ||  Average papers sold: " + stats.getAverageSold());
+        System.out.println("Variance demanded: " + stats.getVarianceDemanded()+ "  ||  Variance sold: " + stats.getVarianceSold());
+        System.out.println("Average profit: " + stats.getAverage() + "  ||  Variance profit: " + stats.getVarianceProfit());
+
+    }
+}
+class NewsBoy{
+    private int demand; //Current Demand for newspaper
+    private int ordered; //Number of newspaper ordered
+    private int bought; //Number of newspapers bought from the supplier
+    private int sold; //Number of newspaper sold to customers
+    private double profit;  //Profit earned
+
+    public NewsBoy(){       //Constructer with default values
+        demand = 0;
+        ordered = 10;       //Initial order quantity
+        bought = 0;
+        sold = 0;
+        profit = 0.0;
+    }
+    public int order(){    //OrderA Function call
+        int x;              //Declaring variable X
+        x = demand -1 ;
+        ordered = x;        //Initializing orderd with x
+        return x;           //returning x
+    }
+    private void behavior(){   //behavior Function call
+        bought = ordered;       //Initialzing bought with how many got ordered
+        if (demand>=bought)     //of the demand is greater or equal than bought
+            sold = bought;      //Initialize sold with bought
+        else
+            sold = demand;      //Initialize sold with the demand
+        profit = 0.20*sold-0.10*bought; //Calculating  the Profit
+        ordered = order(); //returning orderd to the function call
+    }
+    public void setDemand(int x){   //SetDemand Function
+        demand = x;     //demand is initialized with x
+        behavior();     //calling the behavior function
+    }
+    public double getProfit(){
+        return profit;
+    }   //returns the current profit
+    public int getSold(){
+        return sold;
+    }   //returns the number of sold newspaper
+    public int getOrdered(){
+        return ordered;
+    }   //returns the number of newspaper ordered
+
+    class Stats{
+        private double totalDemand;
+        private double profitSum;   //Sum of the Profit
+        private double profitSum_2; //Sum of the profit times profit
+        private double averageProfit; //Average Profit
+        private double standardDev; //Standard deviation of profit
+        private double varianceProfit;    //Variance of profit
+        private int count;  //number of profit
+        private double totalSold;
+        private double totalDemandedSquared;
+        private double totalSold_2;
+
+        public void updateStats(int demand, int sold, double profit) {
+            totalDemand += demand;
+            totalSold += sold;
+            profitSum += profit;
+            totalDemandedSquared += Math.pow(demand, 2);
+            totalSold_2 += Math.pow(sold, 2);
+            profitSum_2 += profit*profit;
+            count++;
+        }
+        public double getAverageSold(){
+            return totalSold / count;
+        }
+        public double getVarianceDemanded() {
+            double mean = getAverageDemand();
+            return (totalDemandedSquared / count) - Math.pow(mean, 2);
+        }
+        public double getVarianceSold() {
+            double mean = getAverageSold();
+            return (totalSold_2 / count) - Math.pow(mean, 2);
+        }
+        public double getVarianceProfit() {
+            double mean = getAverage();
+            return (profitSum_2 / count) - Math.pow(mean, 2);
+        }
+        public double getAverageDemand(){
+            return totalDemand / count;
+        }
+        public double getProfit(double x){
+            return x;
+        }
+        public double getAverage(){
+            return profitSum/count;
+        }   //Get the current Average
+        public double getVariance(){
+            return profitSum_2/count-averageProfit*averageProfit;
+        }
+        public double getStandardDev(){
+            return Math.sqrt(varianceProfit);
+        }   //Get the current Standard Deviation
+        public int getCount(){
+            return count;
+        }   //Get the current Count
+    }
+     class demandProcess{
+        private int demand;
+        public demandProcess(){
+            demand = 0;
+        }   //Initializing demand with 0
+        public int demandToday(){
+            int x;  //Creating x
+            x = (int)(Math.random()*100);   //generating a "random" integer
+            if (x<=20)demand=10;            // based on the "random" number it will determine how many newspaper are bought
+            else
+            if (x<=30)demand=11;
+            else
+            if (x<=60)demand=12;
+            else
+            if (x<=70)demand=13;
+            else
+            if (x<=80)demand=14;
+            else
+                demand = 15;
+            return demand;  //returning the demand
+        }
+     }
+}
