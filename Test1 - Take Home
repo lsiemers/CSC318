@@ -1,0 +1,182 @@
+import java.util.Random;
+
+public class Main {
+    public static void main(String[] args) {
+        Mother mother = new Mother();
+        Statistics statistics = new Statistics();
+        int[] weeklyProfits = new int[52]; // Array to store profits for each week
+
+        for (int weeks = 1; weeks <= 52; weeks++) { // Roughly 10 years in weeks
+            int profit = 0;
+
+            // Determine the current quarter
+            int quarter = (weeks - 1) / 13 + 1;
+
+            // Place order based on the current quarter
+            switch (quarter) {
+                case 1:
+                    mother.orderQ1();
+                    break;
+                case 2:
+                    mother.orderQ2();
+                    break;
+                case 3:
+                    mother.orderQ3();
+                    break;
+                case 4:
+                    mother.orderQ4();
+                    break;
+            }
+
+            // Get demand for the current quarter
+            int demand = 0;
+            switch (quarter) {
+                case 1:
+                    demand = mother.demandProcessQ1();
+                    break;
+                case 2:
+                    demand = mother.demandProcessQ2();
+                    break;
+                case 3:
+                    demand = mother.demandProcessQ3();
+                    break;
+                case 4:
+                    demand = mother.demandProcessQ4();
+                    break;
+            }
+
+            // Calculate profit based on demand and ordered quantity
+            profit = 10 * Math.min(demand, mother.getOrderedQuantity()) - 7 * mother.getOrderedQuantity();
+            weeklyProfits[weeks - 1] = profit; // Store profit for this week
+
+            // Output the profit for the week
+            System.out.println("Week " + weeks + " Profit: $" + profit);
+        }
+
+        // Calculate statistics after all weeks
+        statistics.calculate(weeklyProfits);
+        System.out.println("\nOverall Statistics:");
+        System.out.println("Average Profit: $" + statistics.getAverage());
+        System.out.println("Standard Deviation of Profit: " + statistics.getStandardDeviation());
+        System.out.println("Variance of Profit: " + statistics.getVariance());
+    }
+}
+
+class Statistics {
+    private double average;
+    private double variance;
+    private double standardDeviation;
+
+    public void calculate(int[] profits) {
+        calculateAverage(profits);
+        calculateVariance(profits);
+        calculateStandardDeviation();
+    }
+
+    private void calculateAverage(int[] profits) {
+        int sum = 0;
+        for (int profit : profits) {
+            sum += profit;
+        }
+        average = (double) sum / profits.length;
+    }
+
+    private void calculateVariance(int[] profits) {
+        double sumSquaredDiff = 0;
+        for (int profit : profits) {
+            sumSquaredDiff += Math.pow(profit - average, 2);
+        }
+        variance = sumSquaredDiff / profits.length;
+    }
+
+    private void calculateStandardDeviation() {
+        standardDeviation = Math.sqrt(variance);
+    }
+
+    public double getAverage() {
+        return average;
+    }
+
+    public double getVariance() {
+        return variance;
+    }
+
+    public double getStandardDeviation() {
+        return standardDeviation;
+    }
+}
+
+class Mother {
+    private int orderedQuantity;
+    private Random random;
+
+    public Mother() {
+        orderedQuantity = 0;
+        random = new Random();
+    }
+
+    public void orderQ1() {
+        orderedQuantity = gallonsDelivered(50); // 50
+    }
+
+    public void orderQ2() {
+        orderedQuantity = gallonsDelivered(60); // 60
+    }
+
+    public void orderQ3() {
+        orderedQuantity = gallonsDelivered(60); // 60
+    }
+
+    public void orderQ4() {
+        orderedQuantity = gallonsDelivered(50); // 50
+    }
+
+    public int getOrderedQuantity() {
+        return orderedQuantity;
+    }
+
+    private int gallonsDelivered(int gallons) {
+        int x = (int) (Math.random() * 100);
+        if (x <= 10) gallons -= 5;
+        else if (x <= 90) gallons += 0;
+        else gallons += 10;
+
+        return gallons;
+    }
+
+    public int demandProcessQ1() {
+        int x = (int) (Math.random() * 100);
+        if (x <= 30) return 40;
+        else if (x <= 50) return 50;
+        else if (x <= 80) return 60;
+        else if (x <= 90) return 70;
+        else return 80;
+    }
+
+    public int demandProcessQ2() {
+        int x = (int) (Math.random() * 100);
+        if (x <= 15) return 40;
+        else if (x <= 55) return 50;
+        else if (x <= 80) return 60;
+        else if (x <= 90) return 70;
+        else return 80;
+    }
+
+    public int demandProcessQ3() {
+        int x = (int) (Math.random() * 100);
+        if (x <= 5) return 40;
+        else if (x <= 15) return 50;
+        else if (x <= 45) return 60;
+        else if (x <= 85) return 70;
+        else return 80;
+    }
+
+    public int demandProcessQ4() {
+        int x = (int) (Math.random() * 100);
+        if (x <= 40) return 40;
+        else if (x <= 80) return 50;
+        else if (x <= 90) return 60;
+        else if (x <= 95) return 70;
+        else return 80;
+    }
+}
