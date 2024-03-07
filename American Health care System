@@ -1,20 +1,31 @@
 //Lukas Siemers
-//Medical System
+//Medical System Simulation
 import java.util.*;
 import java.lang.*;
 
 //Run it for 100 hours = 6000 minutes
 //First 1 Doctor (Dr.Sams) and then Both (Dr.Sams + Dr.Smith)
+
+/*
+--------------------- To Do ---------------------
+- Create Queues for the type of Injury
+- set office to busy depending on the rate of service
+- Make sure the Patients are arriving at the rate we are expecting them to
+- Create the Balking/Dying Event Based on the Mean and Standard devation of the Injury
+- 2 queues, General queue for all injuries and then the Individual Injury queue
+--------------------------------------------------
+ */
+
 public class Main {
     public static void main(String[] args) {
-        double begTime = 0.0;   //beginning time
-        double endTime = 6000;  //this would be 100 hours in seconds
-        double eventTime;       //The Time a new event will happen
+        double begTime = 0.0;                                                                                       //beginning time
+        double endTime = 6000;                                                                                      //this would be 100 hours in minutes
+        double eventTime;                                                                                           //The Time a new event will happen
         double deltaTime;
         double balkTime;
 
         GenericManager<Event> EventQue = new GenericManager<Event>();                                               //Event Creation
-        GenericManager<Customer> MyQueue = new GenericManager<Customer>();                                          //Queue Creation
+        GenericManager<Patient> MyQueue = new GenericManager<Patient>();                                            //Queue Creation
 //------------------------------------------------------------------------------------------------------------------------
         int count = 0;
         int BalkId = 0;
@@ -31,11 +42,11 @@ public class Main {
         double totaltimeinline2 = 0.0, totaltimeinsystem2 = 0.0;
 //------------------------------------------------------------------------------------------------------------------------
 
-        Customer served1 = new Customer(-9);                                                //this is the customer (in one office)  The -9 is a balking ID
-        Customer served2 = new Customer(-9);                                                //this is the customer  (int the other office)
-        Customer newcust = new Customer(-9);
-        Customer workcust = new Customer(-9);
-        Event workevent = new Event("Last Patient",8, 6000, 0);                            //Last Event of the simulation with event type 8 (shutdown event) at time 6000.
+        Patient served1 = new Patient(-9);                                                //this is the customer (in one office)  The -9 is a balking ID
+        Patient served2 = new Patient(-9);                                                //this is the customer  (int the other office)
+        Patient newcust = new Patient(-9);
+        Patient workcust = new Patient(-9);
+        Event workevent = new Event(8, 6000, 0);                            //Last Event of the simulation with event type 8 (shutdown event) at time 6000.
 
         numInEvent = EventQue.addinorder(workevent);                                            //Adding the Event into the Queue
         deltimearv = TimetoArriveorServe(0.20);                                            //customers arrive at the rate of every 20 min since it is 3 customers an hour
@@ -43,7 +54,7 @@ public class Main {
         eventTime = begTime + deltimearv;
         System.out.println("the first customer arrives at " + eventTime);                      //
         //Creater the event for the first customer to arrive.
-        workevent = new Event("test",1, eventTime, 0);                                   //Creating the Event for the first Customer   ||| Do we need to add the type of Injury the Patient has?
+        workevent = new Event(1, eventTime, 0);                                   //Creating the Event for the first Customer   ||| Do we need to add the type of Injury the Patient has?
         System.out.println("the first customer arrives at " + eventTime);
         numInEvent = EventQue.addinorder(workevent);                                          //Storing the Event In the Queue
         workevent = EventQue.getvalue(0);                                                   //Get the first event of the Event Queue
@@ -58,6 +69,28 @@ public class Main {
             begTime = workevent.getTime();
             System.out.println("++++++++++++++++++ THE TIME IS NOW++++++++++++++++ " + begTime);
             numInQueue = MyQueue.getmcount();
+
+
+            int percentage;  //Creating the Percentage
+            percentage = (int) (Math.random() * 100);   //generating a "random" integer
+            if (percentage <= 30)
+                newcust.SetinjuryHeart("Heart");            // based on the "random" number it will determine what Injury the Patient will have
+            else if (percentage <= 50)
+                newcust.SetinjuryGastro("Gastro");
+            else if (percentage <= 100)
+                newcust.SetinjuryBleeding("Bleedng");
+
+
+            //Testing Purposes ------------------------------------------------------------------------------------------------
+            System.out.println(newcust.injuryBleeding);             //Displaying the Injury for the Patient
+            System.out.println(newcust.injuryGastro);               //Displaying the Injury for the Patient
+            System.out.println(newcust.injuryHeart);                //Displaying the Injury for the Patient
+            System.out.println(newcust.GetinjuryBleeding(0));       //Bleeding Service Time
+            System.out.println(newcust.GetinjuryGastro(0));         //Gastro Service Time
+            System.out.println(newcust.GetinjuryHeart(0));          //Heart Service Time
+            //Based on the Service Time we can determine how long the current Office will be "busy".
+            //
+            //Testing Purposes ------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------------------
             /*
             CASE 1:
@@ -69,19 +102,19 @@ public class Main {
             switch (workevent.getEtype()) {
                 case 1:                                                                         //customer arrives at the facility
                     if ((DrSims == false) && (numInQueue <= 0)) {
-                        newcust = new Customer(-9);
+                        newcust = new Patient(-9);
                         newcust.SetArrive(begTime);
                         DrSims = true;
                         served1 = newcust;
                         deltimeserv = TimetoArriveorServe(0.05);                      //We need to modify this mean later
                         eventTime = deltimeserv + begTime;
-                        workevent = new Event("test_2",5, eventTime, -9);
+                        workevent = new Event(5, eventTime, -9);
                         numInEvent = EventQue.addinorder(workevent);
                     } else if ((DrSims == true) && (DrSmith == false) && (numInQueue <= 0)) {//server 2 is open and there is no one in the customer que, send the customer to server 2
                         // create the customer object
                         if ((begTime >= 500.00) && (begTime <= 600.00))
                             System.out.println("customer goes in server2");
-                        newcust = new Customer(-9);
+                        newcust = new Patient(-9);
                         // set the arrival time for this customer
                         newcust.SetArrive(begTime);
                         //put this customer in server 2
@@ -90,7 +123,7 @@ public class Main {
                         // generate the finished server event for this customer
                         deltimeserv = TimetoArriveorServe(0.05);//customers are served at the rate of 1 per 20 min
                         eventTime = deltimeserv + begTime;
-                        workevent = new Event("Test_3",6, eventTime, -9);
+                        workevent = new Event(6, eventTime, -9);
                         //put this event in the event queue
                         numInEvent = EventQue.addinorder(workevent);
                     }//done in Dr.Smith
@@ -99,7 +132,7 @@ public class Main {
                         if ((begTime >= 500.00) && (begTime <= 600.00))
                             System.out.println("customer goes into the line");
                         BalkId++;
-                        newcust = new Customer(BalkId);
+                        newcust = new Patient(BalkId);
                         // set the arrival time for this customer
                         newcust.SetArrive(begTime);
                         // now put this customer in line at end
@@ -107,16 +140,16 @@ public class Main {
                         //now create the customer Balk event right now all customers will balk in 10 minutes
                         balkTime = begTime + 10.0;
                         // now create the event
-                        workevent = new Event("Test_4",7, balkTime, BalkId);
+                        workevent = new Event(7, balkTime, BalkId);
                         // add the event to the event queue
                         numInEvent = EventQue.addinorder(workevent);
                     }
-                    deltimearv = TimetoArriveorServe(0.20);
+                    deltimearv = TimetoArriveorServe(0.05);
                     eventTime = begTime + deltimearv;
-                    if ((begTime >= 500.00) && (begTime <= 600.00))
-                        System.out.println("the next customer arrives at " + eventTime);
+                    //if ((begTime >= 500.00) && (begTime <= 600.00))
+                        System.out.println("the next Patient arrives at " + eventTime);
                     //Creater the event for the first customer to arrive.
-                    workevent = new Event("Test_5",1, eventTime, 0);
+                    workevent = new Event(1, eventTime, 0);
                     //Store this event on the queue
                     numInEvent = EventQue.addinorder(workevent);
                     break;
@@ -136,8 +169,8 @@ public class Main {
                 case 3:
                     numInQueue = MyQueue.getmcount();
                     if ((DrSims == false) && (numInQueue > 0)) {// the customer can enter bay 1 get the customer from the front line
-                        if ((begTime >= 500.00) && (begTime <= 600.00))
-                            System.out.println("first customer in line enters server 1");
+                        //if ((begTime >= 500.00) && (begTime <= 600.00))
+                            System.out.println("first Patient in line enters Dr.Sams Office");
                         workcust = MyQueue.getvalue(0);
                         MyBCust = workcust.GetMyBalk();//get the customer balk event
                         PurgeEvent(EventQue, MyBCust);//purge the event from the queue
@@ -150,12 +183,12 @@ public class Main {
                         // generate the finished server event for this customer
                         deltimeserv = TimetoArriveorServe(0.13);//customers are served at the rate of 8 per 20 min
                         eventTime = deltimeserv + begTime;
-                        workevent = new Event("Test_6",5, eventTime, -9);
+                        workevent = new Event(5, eventTime, -9);
                         //put this event in the event queue
                         numInEvent = EventQue.addinorder(workevent);
                     }//end of enter service bay 1
                     else {// either we are busy and have had an event collision or there is noone in the line
-                        System.out.println("in event 3 customer enters service bay 1 unable to process event");
+                        System.out.println("in event 3 Patient enters Dr.Sams unable to process event");
                     }
                     break;
 //------------------------------------------------------------------------------------------------------------------------
@@ -167,8 +200,8 @@ public class Main {
                 case 4:
                     numInQueue = MyQueue.getmcount();
                     if ((DrSmith == false) && (numInQueue > 0)) {// the customer can enter bay 1 get the customer from the front line
-                        if ((begTime >= 500.00) && (begTime <= 600.00))
-                            System.out.println("customer enters service2 from line");
+                        //if ((begTime >= 500.00) && (begTime <= 600.00))
+                            System.out.println("Patient enters Dr.Smiths Office from line");
                         workcust = MyQueue.getvalue(0);
                         MyBCust = workcust.GetMyBalk();//get the customer balk event
                         PurgeEvent(EventQue, MyBCust);//purge the event from the queue
@@ -179,7 +212,7 @@ public class Main {
                                                                                                             // generate the finished server event for this customer
                         deltimeserv = TimetoArriveorServe(0.15);//customers are served at the rate of 8 per 20 min
                         eventTime = deltimeserv + begTime;
-                        workevent = new Event("Test_7",6, eventTime, -9);
+                        workevent = new Event(6, eventTime, -9);
                         //put this event in the event queue
                         numInEvent = EventQue.addinorder(workevent);
                     }//end of enter service bay 2
@@ -197,11 +230,11 @@ public class Main {
                     DrSims = false;
                     totalthrusystem++;
                     numInQueue = MyQueue.getmcount();
-                    if ((begTime >= 500.00) && (begTime <= 600.00))
-                        System.out.println("customer leaves server1 numinque" + numInQueue);
+                    //if ((begTime >= 500.00) && (begTime <= 600.00))
+                        System.out.println("Patient leaves Dr.Sams numinque" + numInQueue);
                     if (numInQueue > 0) {//there are customers in the line, generate a customer enter service bay 1 now at Bigtime
                         //NOTE PROBLEMS WITH COLLISION EVENTS
-                        workevent = new Event("Test_8",3, begTime + 0.01, -9);
+                        workevent = new Event(3, begTime + 0.01, -9);
                         //put this event in the event queue
                         numInEvent = EventQue.addinorder(workevent);
                     }
@@ -215,9 +248,10 @@ public class Main {
                     DrSmith = false;
                     totalthrusystem++;
                     numInQueue = MyQueue.getmcount();
-                    if ((begTime >= 500.00) && (begTime <= 600.00)) System.out.println("customer leaves servere2");
+                    //if ((begTime >= 500.00) && (begTime <= 600.00))
+                    System.out.println("customer leaves Dr.Smiths");
                     if (numInQueue > 0) {//there are customers in the line, generate a customer enter service bay 2 now at Bigtime
-                        workevent = new Event("test_9",4, begTime + .01, -9);
+                        workevent = new Event(4, begTime + .01, -9);
                         //put this event in the event queue
                         numInEvent = EventQue.addinorder(workevent);
                     }
@@ -248,8 +282,8 @@ public class Main {
             // this event is processed delete it from the event queue
             EventQue.removem(0);
             // now get the next event
-            if ((begTime >= 500.00) && (begTime <= 600.00))
-                System.out.println("*************************the time is " + begTime + "****************************");
+            //if ((begTime >= 500.00) && (begTime <= 600.00))
+                //System.out.println("*************************the time is " + begTime + "****************************");
             workevent = EventQue.getvalue(0);
             //  System.out.println("The current customer queue is");
             //PrintCustQue(MyQueue);
@@ -258,17 +292,17 @@ public class Main {
         }//end of simulation loop
         //Now for the Statics
         System.out.println("Printing the Statistics for this Run");
-        System.out.println("There were a total of " + totalthruline + " customers going through the line");
-        System.out.println("These customers spent a average time in line of " + totaltimeinline / totalthruline + " ");
-        System.out.println("There were a total of " + theybalked + " customers balking");
-        System.out.println("customers spent an average time of " + totaltimeinservers / totalthrusystem + " in the servers");
+        System.out.println("There were a total of " + totalthruline + " Patients going through the line");
+        System.out.println("These Patients spent a average time in line of " + totaltimeinline / totalthruline + " ");
+        System.out.println("There were a total of " + theybalked + " Patients dying");
+        System.out.println("customers spent an average time of " + totaltimeinservers / totalthrusystem + " in the Offices");
     }
 //------------------------------------------------------------------------------------------------------------------------
 //                      END OF MAIN
 //------------------------------------------------------------------------------------------------------------------------
-    public static void OutaHere(GenericManager<Customer> CustLine, int Balkid) {// this function removes a balking customer from the Queue line CustLine.  It traverces the line, finds the customer with balkid and removes them
+    public static void OutaHere(GenericManager<Patient> CustLine, int Balkid) {// this function removes a balking customer from the Queue line CustLine.  It traverces the line, finds the customer with balkid and removes them
         int i, numinline, CBalkid;
-        Customer workcust = new Customer(-9);
+        Patient workcust = new Patient(-9);
         //prepare to trasverse the customer line
         numinline = CustLine.getmcount();
         workcust = CustLine.getvalue(0);
@@ -294,7 +328,7 @@ public class Main {
     {// this function removes a balking event from the Event Queue  It traverces the Event Queuue, finds the event with Balkid
         // and removes it
         int i,numinqueue,EBalkid;
-        Event workevent=new Event("",1,1.0,1);
+        Event workevent=new Event(1,1.0,1);
         //prepare to trasverse the event queue
         numinqueue=EventQue.getmcount();
         workevent=EventQue.getvalue(0);
@@ -315,9 +349,9 @@ public class Main {
 
 // ------------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------------
-public static void PrintCustQue(GenericManager<Customer> MyQueue) {
+public static void PrintCustQue(GenericManager<Patient> MyQueue) {
                 int numinqueue;
-                  Customer workcust=new Customer(123);
+                  Patient workcust=new Patient(123);
                      numinqueue=MyQueue.getmcount()-1;
 
                   for(int i=0;i<=numinqueue;i++)
@@ -332,7 +366,7 @@ public static void PrintCustQue(GenericManager<Customer> MyQueue) {
 //-------------------------------------------------------------------------------------------------------------------------
 public static void PrintEventQue(GenericManager<Event> EventQue)
         {int numinevent;
-                  Event workevent=new Event(" ",1,1.0,1);
+                  Event workevent=new Event(1,1.0,1);
                   numinevent=EventQue.getmcount()-1;
                // System.out.println("printing event queue there are"+(numinevent+1)+"in event queue");
                   for(int i=0;i<=numinevent;i++)
@@ -357,7 +391,7 @@ public static double TimetoArriveorServe(double rate) {//this is the ramdom proc
 
 //------------------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------------------
-public static double UpdateCustomer(GenericManager<Customer> custline, double deltime)
+public static double UpdateCustomer(GenericManager<Patient> custline, double deltime)
       {// this function adds up all the time spent for a customer in line for this deltime
               double linetime=0.0;
                int custinline;
@@ -369,7 +403,7 @@ public static double UpdateCustomer(GenericManager<Customer> custline, double de
                 }//end of UpdateCustomer
 //------------------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------------------
-public static double UpdateServers(Customer s1, boolean b1, Customer s2, boolean b2, double deltime)
+public static double UpdateServers(Patient s1, boolean b1, Patient s2, boolean b2, double deltime)
        {// this function updates the time to customers in the servers
                 double servetime=0.0;
                  if(b1&&b2)return servetime=2*deltime;
@@ -382,35 +416,46 @@ public static double UpdateServers(Customer s1, boolean b1, Customer s2, boolean
 
 //------------------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------------------
-class Customer implements Comparable{
-          /* This is Customer class.  It stores the time the customer gets iN line, time gets iN server and time iN system;  It also keeps an id to the
-      Balk event associated with this customer.*/
+class Patient implements Comparable{
+          /* This is Patient class.  It stores the time the Patients gets iN line, time gets iN server and time iN system;  It also keeps an id to the
+      Balk event associated with this Patient.*/
           protected double timeNline;
           protected double timeNserver;
           protected double timeNsystem;
           protected double timeArrive;
           protected int mynum;
-          protected int MyBalk;//this is the unique identifier of my balking event
-          public Customer(int x)
+          protected String injuryHeart;
+          protected String injuryGastro;
+          protected String injuryBleeding;
+
+    protected int MyBalk;//this is the unique identifier of my balking event
+          public Patient(int x)
           { // create the customer object.
                timeNline=timeNserver=timeNsystem=0;
                mynum=x;
                MyBalk=x;
               }
            public int compareTo(Object o){//the Customer class must have a comparable if we are to use in the queue manager
-                   if(GetNline()>((Customer)o).GetNline())return 1;// if time a > time b return 1
+                   if(GetNline()>((Patient)o).GetNline())return 1;// if time a > time b return 1
                      else
-                      if(GetNline()<((Customer)o).GetNline())return -1;//if time a < time b return -1
+                      if(GetNline()<((Patient)o).GetNline())return -1;//if time a < time b return -1
                        else return 0;
                   }//end of compareTo
-
           public void SetArrive(double x){
               //the time we arrive is set at directly from x
               timeArrive=x;}
-
           public void SetNline(double x){
               //note that we add the value of x it is the del time
               timeNline+=x;}
+        public void SetinjuryHeart(String injury){
+              injuryHeart = injury;
+        }
+        public void SetinjuryGastro(String injury){
+            injuryGastro = injury;
+        }
+        public void SetinjuryBleeding(String injury){
+            injuryBleeding = injury;
+        }
           public void SetNserver(double x){
               //note that we add the value of x it is the del time
               timeNserver+=x;}
@@ -424,28 +469,33 @@ class Customer implements Comparable{
          public double GetNserver(){return timeNserver;}
          public double GetNsystem(){return timeNsystem;}
          public int GetMyBalk(){return MyBalk;}
+
+        public double GetinjuryHeart(double heart){return 30;}         //Rates of Service since it is 2 per hour
+        public double GetinjuryGastro(double gastro){return 15;}      //Rates of Service since it is 4 per hour
+        public double GetinjuryBleeding(double bleeding){return 10;}   //Rates of Service since it is 6 per hour
+
+    /*
+    We are getting and setting the Type of Injury in this Patient Class, which will return the type of Injury!
+    based on that we need to determine the Rate of service and adjust the balk time based on the dying factor -----!
+     */
+
+
+
           }//end of Customer Class
 
 //------------------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------------------
 class Event implements Comparable {
-      /* This is the event class.  Events hold an event type, an event time and in the case of a balk event, a pointer to customer
+      /* This is the event class.  Events hold an event type, an event time and in the case of a balk event, a pointer to Patient
        when the event is a balk event.*/
       protected int x;// event type
        protected double time;// this is the time of the event
        protected int MyCust;//it this a balk event, this a unique identifier of the balking customer;
        protected int etype;//this is the event type
         protected String injury;//This is the event Injury based on patient
-       public Event(String injury,int etype, double etime, int balkcust){
+       public Event(int etype, double etime, int balkcust){
 
-               int percentage;  //Creating x
-               percentage = (int) (Math.random() * 100);   //generating a "random" integer
-               if (percentage <= 30)
-                   injury = "Heart";            // based on the "random" number it will determine how many newspaper are bought
-               else if (percentage <= 50)
-                   injury = "Gastro";
-               else if (percentage <= 100)
-                   injury = "Bleeding";
+
                 x=etype;
                 time=etime;
                 if(x==7)
@@ -467,8 +517,7 @@ class Event implements Comparable {
           public int getEtype(){return x;}
           public int getMyCust(){return MyCust;}
           public String getInjury(){return injury;}
-
-                 }//end of class event
+}
 //------------------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------------------
 class GenericManager<T extends Comparable>{// NOTE THAT YOU MUST ADD THIS COMPARABLE TO USE COMPARETO FUNCTON THAT COMES ALONG WITH T
@@ -477,7 +526,6 @@ class GenericManager<T extends Comparable>{// NOTE THAT YOU MUST ADD THIS COMPAR
         public GenericManager()
          {// this is the generic constructor
                    mcount=0;//mcount is the next available value in array myarray
-
                    }
         public int addatend(T x)//this places values at the end of myarray
         { mylist.add(mcount++,x);
